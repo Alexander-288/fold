@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fold</title>
+<meta name="description" content="Procedural gradient and fold generator running on the GPU.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#111111">
+<link rel="stylesheet" href="css/app.css">
+<script>
+  // Apply the saved theme before first paint
+  try { const t = localStorage.getItem('fold.theme'); if (t) document.documentElement.dataset.theme = t; } catch {}
+</script>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <img class="mark" src="assets/logo.svg" alt="" width="26" height="18">
+      <b>Fold</b>
+      <span class="mono tag">Gradient &amp; fold</span>
+    </div>
+    <div class="top-mid" id="topMid"></div>
+    <div class="top-right" id="topRight"></div>
+  </header>
+
+  <main class="stage" id="stage">
+    <div class="frame-wrap" id="frameWrap">
+      <div class="frame" id="frame">
+        <canvas id="view"></canvas>
+        <canvas class="xfade" id="xfade" aria-hidden="true"></canvas>
+        <svg class="handles" id="handles"></svg>
+      </div>
+      <div class="frame-meta mono" id="frameMeta"></div>
+    </div>
+    <nav class="toolbar" id="toolbar" aria-label="Tools"></nav>
+    <div class="zoom-pill" id="zoomPill"></div>
+    <div class="strip-wrap" id="stripWrap">
+      <button class="strip-toggle mono" id="stripToggle" type="button">Presets</button>
+      <div class="strip" id="strip"></div>
+    </div>
+    <div class="drop mono" id="drop">Drop a .fold.json preset</div>
+  </main>
+
+  <aside class="panel" id="panel">
+    <div class="tabs" id="tabs"></div>
+    <div class="panel-body" id="panelBody"></div>
+  </aside>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
