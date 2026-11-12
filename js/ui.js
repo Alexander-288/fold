@@ -5,7 +5,7 @@ export function h(tag, attrs = {}, ...kids) {
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') e.className = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+    else if (k === 'style' && typeof v === 'object') for (const [sk, sv] of Object.entries(v)) sk.startsWith('--') ? e.style.setProperty(sk, sv) : (e.style[sk] = sv);
     else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
     else if (k === 'html') e.innerHTML = v;
     else e.setAttribute(k, v === true ? '' : v);
@@ -243,4 +243,73 @@ export function toast(msg, { kind = '', ms = 2600, progress = false } = {}) {
     set(p, text) { if (bar) bar.firstChild.style.width = (p * 100).toFixed(1) + '%'; if (text) t.firstChild.textContent = text; },
     done(text, k) { if (text) t.firstChild.textContent = text; if (k) t.classList.add(k); bar?.remove(); setTimeout(kill, 2200); },
   };
+}
+
+// ---- colour ramp editor ----
+const hx = h2 => { h2 = h2.replace('#', ''); const n = parseInt(h2.length === 3 ? [...h2].map(c => c + c).join('') : h2, 16) || 0; return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const toHex = a => '#' + a.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+export function rampAt(stops, p) {
+  const s = [...stops].sort((a, b) => a.p - b.p);
+  if (p <= s[0].p) return s[0].c;
+  for (let i = 1; i < s.length; i++) if (p <= s[i].p) {
+    const k = (p - s[i - 1].p) / Math.max(1e-5, s[i].p - s[i - 1].p), a = hx(s[i - 1].c), b = hx(s[i].c);
+    return toHex(a.map((v, j) => v + (b[j] - v) * k));
+  }
+  return s.at(-1).c;
+}
+export const rampCss = (stops, dir = '90deg') => `linear-gradient(${dir}, ${[...stops].sort((a, b) => a.p - b.p).map(s => `${s.c} ${(s.p * 100).toFixed(1)}%`).join(', ')})`;
+
+// Gradient bar: click to add a stop, drag stops, double-click a stop to remove it
+export function RampEditor({ label = 'Colours', get, set, commit, max = 8, presets = [] }) {
+  let sel = 0;
+  const stops = () => get() || [];
+  const put = (fn, key = 'ramp') => { const s = JSON.parse(JSON.stringify(stops())); fn(s); set(s, key); update(); };
+  const bar = h('div', { class: 'ramp-bar' });
+  const marks = h('div', { class: 'ramp-marks' });
+  const track = h('div', { class: 'ramp-track', title: 'Click to add a stop, drag to move, double-click to remove' }, bar, marks);
+  const colorCtl = ColorField({ label: 'Stop colour', get: () => stops()[sel]?.c || '#000000', set: v => put(s => { if (s[sel]) s[sel].c = v; }, 'rampc'), commit });
+  const posIn = h('input', { class: 'ctl-num', 'aria-label': 'Stop position', inputmode: 'decimal' });
+  posIn.addEventListener('change', () => { const v = parseFloat(posIn.value); if (!isNaN(v)) put(s => { s[sel].p = Math.max(0, Math.min(1, v / 100)); }); commit?.(); });
+  posIn.addEventListener('keydown', e => { if (e.key === 'Enter') posIn.blur(); });
+  const btn = (title, ic, fn) => h('button', { type: 'button', class: 'ibtn', title, 'aria-label': title, onclick: fn }, icon(ic, 15));
+  const delBtn = btn('Remove stop', '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/>', () => { if (stops().length > 2) { put(s => s.splice(sel, 1)); sel = Math.max(0, sel - 1); update(); commit?.(); } });
+  const tools = h('div', { class: 'ramp-tools' },
+    h('span', { class: 'ctl-label' }, 'Position'), posIn, h('span', { class: 'mono' }, '%'),
+    h('span', { style: { flex: 1 } }),
+    btn('Reverse', '<path d="M7 7h11l-3-3M17 17H6l3 3"/>', () => { put(s => s.forEach(x => (x.p = 1 - x.p))); commit?.(); }),
+    btn('Space evenly', '<path d="M4 6v12M12 6v12M20 6v12"/>', () => { put(s => { s.sort((a, b) => a.p - b.p).forEach((x, i) => (x.p = s.length > 1 ? i / (s.length - 1) : 0)); }); commit?.(); }),
+    delBtn);
+  const presetRow = presets.length ? h('div', { class: 'ramp-presets' }, ...presets.map(pr =>
+    h('button', { type: 'button', class: 'ramp-chip', title: pr.name, style: { background: rampCss(pr.stops) }, onclick: () => { set(JSON.parse(JSON.stringify(pr.stops)), 'rampp'); sel = 0; update(); commit?.(); } }))) : null;
+  const root = h('div', { class: 'ramp' }, h('div', { class: 'ramp-head' }, h('label', { class: 'ctl-label' }, label)), track, tools, colorCtl.el, presetRow);
+  const fromX = x => { const r = track.getBoundingClientRect(); return Math.max(0, Math.min(1, (x - r.left) / r.width)); };
+  track.addEventListener('pointerdown', e => {
+    const mk = e.target.closest('.ramp-mark');
+    if (mk) sel = +mk.dataset.i;
+    else {
+      if (stops().length >= max) return;
+      const p = fromX(e.clientX);
+      put(s => { s.push({ p: +p.toFixed(3), c: rampAt(s, p) }); });
+      sel = stops().length - 1;
+    }
+    update();
+    track.setPointerCapture(e.pointerId);
+    const mv = ev => put(s => { s[sel].p = +fromX(ev.clientX).toFixed(3); }, 'rampdrag');
+    const up = () => { track.removeEventListener('pointermove', mv); track.removeEventListener('pointerup', up); commit?.(); };
+    track.addEventListener('pointermove', mv);
+    track.addEventListener('pointerup', up);
+  });
+  track.addEventListener('dblclick', e => { const mk = e.target.closest('.ramp-mark'); if (mk && stops().length > 2) { sel = +mk.dataset.i; put(s => s.splice(sel, 1)); sel = 0; update(); commit?.(); } });
+  function update() {
+    const s = stops();
+    if (sel >= s.length) sel = s.length - 1;
+    bar.style.background = rampCss(s);
+    marks.innerHTML = '';
+    s.forEach((st, i) => marks.append(h('span', { class: 'ramp-mark' + (i === sel ? ' is-sel' : ''), 'data-i': i, style: { left: st.p * 100 + '%', '--c': st.c } })));
+    if (document.activeElement !== posIn) posIn.value = Math.round((s[sel]?.p || 0) * 100);
+    delBtn.disabled = s.length <= 2;
+    colorCtl.update();
+  }
+  update();
+  return { el: root, update };
 }

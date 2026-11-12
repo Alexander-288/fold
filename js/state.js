@@ -18,25 +18,54 @@ export const ASPECTS = [
 let uid = 1;
 export const newId = () => 'l' + (Date.now().toString(36)) + (uid++);
 
+const R2 = (a, b = a) => [{ p: 0, c: a }, { p: 1, c: b }];
+const clone = o => JSON.parse(JSON.stringify(o));
+
 const LAYER_DEFAULTS = {
-  blob: { name: 'Blob', sx: .35, sy: .35, soft: 1, a: 0, b: 0, blend: 'normal', c1: '#9696ff', c2: '#9696ff' },
-  ring: { name: 'Ring', sx: .4, sy: .4, soft: .15, a: 0, b: .06, blend: 'add', c1: '#ff8a3c', c2: '#5a2a10' },
-  band: { name: 'Spectrum', sx: .7, sy: .07, soft: .8, a: .9, b: -.5, blend: 'add', c1: '#ffd9b0', c2: '#ffffff' },
-  linear: { name: 'Linear', sx: .5, sy: .5, soft: 1, a: 0, b: 0, blend: 'normal', c1: '#111111', c2: '#9696ff' },
-  conic: { name: 'Conic', sx: .6, sy: .6, soft: .6, a: 1, b: 0, blend: 'screen', c1: '#111111', c2: '#9696ff' },
-  noise: { name: 'Cloud', sx: .5, sy: .5, soft: .5, a: .5, b: .3, blend: 'screen', c1: '#2a2a2a', c2: '#9696ff' },
+  blob: { name: 'Blob', sx: .35, sy: .35, soft: 1, a: 0, b: 0, blend: 'normal', ramp: R2('#9696ff') },
+  ring: { name: 'Ring', sx: .4, sy: .4, soft: .15, a: 0, b: .06, blend: 'add', ramp: R2('#ff8a3c', '#5a2a10') },
+  band: { name: 'Spectrum', sx: .7, sy: .07, soft: .8, a: .9, b: -.5, core: 1, blend: 'add', ramp: R2('#ffd9b0') },
+  linear: { name: 'Linear', sx: .5, sy: .5, soft: 1, a: 0, b: 0, blend: 'normal', ramp: R2('#111111', '#9696ff') },
+  conic: { name: 'Conic', sx: .6, sy: .6, soft: .6, a: 1, b: 0, blend: 'screen', ramp: R2('#111111', '#9696ff') },
+  noise: { name: 'Cloud', sx: .5, sy: .5, soft: .5, a: .5, b: .3, blend: 'screen', ramp: R2('#2a2a2a', '#9696ff') },
+  spline: {
+    name: 'Light', sx: .006, sy: .05, soft: .5, a: .6, b: 0, blend: 'add', style: 'neon', cmode: 'along',
+    ramp: R2('#9696ff', '#ff8a4c'), pts: [[-.32, .12], [-.12, -.12], [.1, .12], [.32, -.06]],
+  },
+  image: { name: 'Image', sx: .35, sy: .35, soft: 0, a: 0, b: 0, blend: 'normal', src: 'image', asset: null, ramp: R2('#ffffff') },
+};
+const TEXT_DEFAULTS = {
+  name: 'Text', src: 'text', text: 'Fold', font: '"Schibsted Grotesk", sans-serif', weight: 700, spacing: -.02, align: 'center',
+  sx: .4, a: 1, ramp: R2('#f2f1ed', '#9696ff'),
 };
 
 export function makeLayer(type = 'blob', over = {}) {
-  return {
-    id: newId(), type, visible: true, x: 0, y: 0, rot: 0, intensity: 1,
-    ...LAYER_DEFAULTS[type], ...over,
-  };
+  const extra = type === 'text' ? TEXT_DEFAULTS : {};
+  const t = type === 'text' ? 'image' : type;
+  const l = { id: newId(), type: t, visible: true, x: 0, y: 0, rot: 0, intensity: 1, ...clone(LAYER_DEFAULTS[t]), ...clone(extra), ...over };
+  // old two-colour layers
+  if (over.c1 && !over.ramp) l.ramp = R2(over.c1, over.c2 || over.c1);
+  delete l.c1; delete l.c2;
+  return l;
 }
+
+export const FX_DEFAULTS = {
+  adjust: { exposure: 0, contrast: 0, saturation: 1, hue: 0 },
+  grade: { lift: 0, gamma: 1, gain: 1, temp: 0, tint: 0, shadows: 0, highlights: 0, balance: 0, shadowColor: '#2a4a9a', highlightColor: '#ffb070' },
+  gradmap: { amount: 1, contrast: 1, ramp: [{ p: 0, c: '#111111' }, { p: .55, c: '#9696ff' }, { p: 1, c: '#f2f1ed' }] },
+  bloom: { threshold: .6, radius: 60, intensity: .8, knee: .3, tint: '#ffffff' },
+  halation: { threshold: .65, radius: 22, intensity: .7, color: '#ff4a1c' },
+  lens: { distortion: .12, fringe: .35, edgeBlur: .3 },
+  blur: { radius: 12, tilt: 0, focus: .5, band: .3, angle: 0 },
+  vignette: { amount: .3, roundness: 0, softness: .5, color: '#000000' },
+  halftone: { mode: 'dots', cell: 6, angle: 0, dot: .3, colored: false, gamma: 1, mix: 1, ink: '#ffffff', paper: '#000000' },
+  grain: { amount: .08, size: 1, colored: false, animated: true },
+};
+export const makeFx = (type, over = {}) => ({ id: newId(), type, on: true, ...clone(FX_DEFAULTS[type]), ...over });
 
 export function defaultState() {
   return {
-    v: 1,
+    v: 2,
     aspect: { id: '9:16', w: 9, h: 16 },
     view: { zoom: 1, x: 0, y: 0 },
     bg: '#0b0b0b',
@@ -44,19 +73,35 @@ export function defaultState() {
     drift: 0,
     layers: [],
     fold: { type: 'none', angle: 0, count: 14, strength: .5, shift: 0, shading: .3, chroma: 0, smear: 0, jitter: 0, highlight: 0 },
-    tone: { exposure: 0, contrast: 0, saturation: 1, hue: 0, vignette: 0 },
-    grain: { amount: .08, size: 1, colored: false, animated: true },
-    halftone: { mode: 'none', cell: 6, angle: 0, dot: .3, colored: false, gamma: 1, mix: 1, ink: '#ffffff', paper: '#000000' },
+    fx: [makeFx('adjust'), makeFx('grain')],
     anim: { duration: 8 },
   };
+}
+
+// Old files had tone / grain / halftone blocks instead of an effects stack
+function legacyFx(s) {
+  const t = s.tone || {}, g = s.grain, h = s.halftone;
+  const fx = [makeFx('adjust', { exposure: t.exposure ?? 0, contrast: t.contrast ?? 0, saturation: t.saturation ?? 1, hue: t.hue ?? 0 })];
+  if (t.vignette > 0) fx.push(makeFx('vignette', { amount: t.vignette }));
+  if (h && h.mode && h.mode !== 'none') fx.push(makeFx('halftone', h));
+  if (!g || g.amount > 0) fx.push(makeFx('grain', g || {}));
+  return fx;
 }
 
 // Merge a partial (preset or loaded file) over defaults so older files keep working
 export function normalize(s) {
   const d = defaultState();
   const out = { ...d, ...s };
-  for (const k of ['aspect', 'view', 'warp', 'fold', 'tone', 'grain', 'halftone', 'anim']) out[k] = { ...d[k], ...(s[k] || {}) };
-  out.layers = (s.layers || []).map(l => ({ ...makeLayer(l.type || 'blob'), ...l, id: l.id || newId() }));
+  for (const k of ['aspect', 'view', 'warp', 'fold', 'anim']) out[k] = { ...d[k], ...(s[k] || {}) };
+  out.layers = (s.layers || []).map(l => {
+    const n = { ...makeLayer(l.src === 'text' ? 'text' : l.type || 'blob'), ...l, id: l.id || newId() };
+    if (!l.ramp && l.c1) n.ramp = R2(l.c1, l.c2 || l.c1);
+    delete n.c1; delete n.c2;
+    return n;
+  });
+  out.fx = (s.fx || legacyFx(s)).map(f => ({ ...makeFx(f.type), ...f, id: f.id || newId() }));
+  delete out.tone; delete out.grain; delete out.halftone;
+  out.v = 2;
   return out;
 }
 
@@ -169,6 +214,44 @@ export const PRESETS = [
     fold: { type: 'accordion', angle: -20, count: 9, strength: .5, shift: 0, shading: .6, chroma: .05, smear: 0, jitter: .02, highlight: .04 },
     grain: { amount: .06, size: 1, colored: false, animated: true }, drift: .3,
   }),
+  P('Neon line', {
+    aspect: { id: '9:16', w: 9, h: 16 }, bg: '#060608',
+    layers: [
+      L('blob', { name: 'Haze', x: .1, y: -.2, sx: .7, sy: .6, ramp: R2('#16163a', '#09090f'), intensity: .9 }),
+      L('spline', { name: 'Neon', pts: [[-.45, .55], [-.2, .1], [.15, .25], [.05, -.35], [.42, -.7]], sx: .005, sy: .045, soft: .6, a: .5, b: .7, ramp: R2('#9696ff', '#ff6a3d'), intensity: .9 }),
+    ],
+    fold: { type: 'fluted', angle: 0, count: 26, strength: .55, shift: 0, shading: .3, chroma: .2, smear: 0, jitter: 0, highlight: .03 },
+    fx: [{ type: 'adjust', contrast: .05 }, { type: 'bloom', threshold: .55, radius: 70, intensity: .7 }, { type: 'vignette', amount: .35 }, { type: 'grain', amount: .07 }],
+    drift: .2,
+  }),
+  P('Light painting', {
+    aspect: { id: '4:5', w: 4, h: 5 }, bg: '#050505',
+    layers: [
+      L('spline', { name: 'Warm stroke', style: 'paint', pts: [[-.5, .3], [-.2, -.25], [.15, .2], [.5, -.15]], sx: .01, sy: .05, soft: .4, a: .8, ramp: [{ p: 0, c: '#ff3d1f' }, { p: .5, c: '#ffb36b' }, { p: 1, c: '#fff2d6' }], intensity: 1.1 }),
+      L('spline', { name: 'Cool stroke', style: 'paint', pts: [[-.45, -.45], [-.05, -.05], [.3, .45]], sx: .006, sy: .035, soft: .5, a: .9, cmode: 'spectrum', intensity: .9 }),
+    ],
+    fx: [{ type: 'adjust' }, { type: 'bloom', threshold: .35, radius: 50, intensity: .9 }, { type: 'halation', intensity: .6 }, { type: 'grain', amount: .1, size: 1.2 }],
+    warp: { amount: .015, scale: 2, flow: .3 }, drift: .15,
+  }),
+  P('Silk', {
+    aspect: { id: '16:9', w: 16, h: 9 }, bg: '#0c0a10',
+    layers: [
+      L('spline', { name: 'Silk', style: 'silk', pts: [[-.95, .25], [-.4, -.15], [.1, .2], [.55, -.2], [1, .1]], sx: .06, sy: .12, soft: .6, a: .3, ramp: [{ p: 0, c: '#3b3b8a' }, { p: .5, c: '#9696ff' }, { p: 1, c: '#ffd2c2' }], cmode: 'across', blend: 'screen' }),
+    ],
+    fx: [{ type: 'adjust', contrast: .1 }, { type: 'lens', distortion: .08, fringe: .4, edgeBlur: .4 }, { type: 'bloom', threshold: .7, radius: 40, intensity: .5 }, { type: 'grain', amount: .05 }],
+    warp: { amount: .03, scale: 1.2, flow: .35 }, drift: .3,
+  }),
+  P('Type glass', {
+    aspect: { id: '1:1', w: 1, h: 1 }, bg: '#0b0b0b',
+    layers: [
+      L('blob', { name: 'Glow', x: -.1, y: .05, sx: .45, sy: .35, ramp: R2('#9696ff', '#2a2a6a') }),
+      L('blob', { name: 'Ember', x: .25, y: -.1, sx: .25, sy: .25, ramp: R2('#ff8a4c', '#5a2410'), blend: 'screen' }),
+      L('text', { name: 'Word', text: 'FOLD', weight: 800, sx: .38, spacing: -.03, ramp: R2('#f2f1ed', '#f2f1ed') }),
+    ],
+    fold: { type: 'fluted', angle: 0, count: 18, strength: .8, shift: 0, shading: .35, chroma: .25, smear: 0, jitter: 0, highlight: .05 },
+    fx: [{ type: 'adjust' }, { type: 'bloom', threshold: .7, radius: 30, intensity: .5 }, { type: 'grain', amount: .06 }],
+    drift: .3,
+  }),
 ];
 
 // Curated palettes for shuffle: [bg, ...colours]
@@ -196,19 +279,27 @@ export function randomState(base) {
     const c = pick(pal.slice(1));
     s.layers.push(makeLayer('blob', {
       name: 'Blob ' + (i + 1), x: r(-ex, ex), y: r(-ey, ey), sx: r(.15, .7), sy: r(.12, .6), rot: r(-60, 60),
-      c1: c, c2: pick(pal), intensity: r(.6, 1), blend: Math.random() < .25 ? 'screen' : 'normal',
+      ramp: R2(c, pick(pal)), intensity: r(.6, 1), blend: Math.random() < .25 ? 'screen' : 'normal',
     }));
   }
   if (Math.random() < .35) s.layers.push(makeLayer('band', { x: r(-.1, .1), y: r(-ey * .5, ey * .5), rot: r(-25, 25), b: r(-.8, .8), sx: r(.6, 1.1) }));
-  if (Math.random() < .2) s.layers.push(makeLayer('ring', { x: r(-ex, ex), y: r(-ey, ey), sx: r(.3, .8), sy: 0, c1: pick(pal.slice(1)) }));
-  if (Math.random() < .2) s.layers.push(makeLayer('noise', { c1: pal[0], c2: pick(pal.slice(1)), a: r(.4, .6), b: r(0, 1) }));
+  if (Math.random() < .2) s.layers.push(makeLayer('ring', { x: r(-ex, ex), y: r(-ey, ey), sx: r(.3, .8), sy: 0, ramp: R2(pick(pal.slice(1)), pal[0]) }));
+  if (Math.random() < .2) s.layers.push(makeLayer('noise', { ramp: R2(pal[0], pick(pal.slice(1))), a: r(.4, .6), b: r(0, 1) }));
+  if (Math.random() < .25) s.layers.push(makeLayer('spline', {
+    pts: [0, 1, 2, 3].map(i => [-ex * .8 + i * ex * .53, r(-ey * .6, ey * .6)]), style: pick(['neon', 'neon', 'paint', 'silk']),
+    ramp: R2(pick(pal.slice(1)), pick(pal.slice(1))), b: Math.random() < .5 ? r(.3, .8) : 0,
+  }));
   s.layers.forEach(l => { if (l.type === 'ring') l.sy = l.sx; });
   const fold = pick(['none', 'fluted', 'fluted', 'folds', 'folds', 'accordion', 'wave', 'tiles']);
   s.fold = { ...s.fold, type: fold, angle: pick([0, 0, 90, r(-50, 50)]), count: fold === 'fluted' ? r(16, 48) : fold === 'tiles' ? r(4, 10) : r(3, 12), strength: r(.3, .9), shift: fold === 'folds' ? r(.05, .25) : 0, shading: r(.15, .6), chroma: r(0, .25), smear: Math.random() < .3 ? r(.02, .08) : 0, highlight: r(0, .1) };
   s.warp = { amount: r(0, .1), scale: r(.8, 2), flow: r(.15, .4) };
   s.drift = r(.1, .4);
-  s.grain = { ...s.grain, amount: r(.03, .18), size: r(1, 1.6) };
-  if (Math.random() < .12) s.halftone = { ...s.halftone, mode: pick(['dots', 'grid', 'dither']), cell: r(5, 14) };
+  s.fx = [makeFx('adjust', { contrast: r(0, .15) })];
+  if (Math.random() < .35) s.fx.push(makeFx('bloom', { threshold: r(.45, .75), intensity: r(.4, 1) }));
+  if (Math.random() < .15) s.fx.push(makeFx('halation'));
+  if (Math.random() < .12) s.fx.push(makeFx('halftone', { mode: pick(['dots', 'grid', 'dither']), cell: r(5, 14) }));
+  if (Math.random() < .3) s.fx.push(makeFx('vignette', { amount: r(.15, .4) }));
+  s.fx.push(makeFx('grain', { amount: r(.03, .18), size: r(1, 1.6) }));
   s.view = { ...(base?.view || s.view) };
   return s;
 }
