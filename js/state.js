@@ -106,6 +106,8 @@ export function normalize(s) {
 }
 
 const L = makeLayer;
+// evenly spaced ramp from a list of colours
+const RS = (...cs) => cs.map((c, i) => ({ p: i / (cs.length - 1), c }));
 const P = (name, s) => ({ name, state: normalize(s) });
 
 export const PRESETS = [
@@ -251,6 +253,134 @@ export const PRESETS = [
     fold: { type: 'fluted', angle: 0, count: 18, strength: .8, shift: 0, shading: .35, chroma: .25, smear: 0, jitter: 0, highlight: .05 },
     fx: [{ type: 'adjust' }, { type: 'bloom', threshold: .7, radius: 30, intensity: .5 }, { type: 'grain', amount: .06 }],
     drift: .3,
+  }),
+  P('Sunset reeds', {
+    aspect: { id: '9:16', w: 9, h: 16 }, bg: '#1a0d14',
+    layers: [
+      L('linear', { name: 'Sky', rot: 90, sx: .9, ramp: RS('#2a1240', '#c4436a', '#ffb36b') }),
+      L('blob', { name: 'Sun', x: .05, y: .18, sx: .28, sy: .28, soft: .55, ramp: RS('#fff4d6', '#ffcf7a', '#ff7a3d'), intensity: 1.1 }),
+      L('blob', { name: 'Haze', x: -.1, y: .25, sx: .8, sy: .22, ramp: R2('#ff8a5c', '#5a1f3a'), blend: 'screen', intensity: .6 }),
+      L('blob', { name: 'Ground', x: 0, y: .78, sx: 1.2, sy: .42, soft: .8, ramp: R2('#120810', '#1a0d14') }),
+    ],
+    fold: { type: 'fluted', angle: 0, count: 30, strength: .75, shift: 0, shading: .3, chroma: .12, smear: .03, jitter: 0, highlight: .04 },
+    fx: [{ type: 'adjust', contrast: .05 }, { type: 'grade', temp: .25, shadows: .3, shadowColor: '#3a1a6a' }, { type: 'bloom', threshold: .7, radius: 50, intensity: .5 }, { type: 'grain', amount: .08 }],
+    warp: { amount: .03, scale: 1.5, flow: .25 }, drift: .2,
+  }),
+  P('Chrome', {
+    aspect: { id: '4:5', w: 4, h: 5 }, bg: '#0e0e10',
+    layers: [
+      L('linear', { name: 'Metal', rot: 70, sx: .35, ramp: RS('#1a1a1e', '#d9dce4', '#3a3c44', '#f4f5f8', '#22232a') }),
+      L('blob', { name: 'Glint', x: .15, y: -.2, sx: .2, sy: .5, rot: 20, ramp: R2('#ffffff', '#8890a0'), blend: 'screen', intensity: .7 }),
+    ],
+    fold: { type: 'accordion', angle: 15, count: 7, strength: .9, shift: 0, shading: .7, chroma: .08, smear: 0, jitter: .03, highlight: .1 },
+    fx: [{ type: 'adjust', contrast: .2, saturation: .4 }, { type: 'gradmap', amount: .35, ramp: RS('#0b0c10', '#7d8496', '#f2f4fa') }, { type: 'grain', amount: .05 }],
+    drift: .3,
+  }),
+  P('Deep sea', {
+    aspect: { id: '9:16', w: 9, h: 16 }, bg: '#020a12',
+    layers: [
+      L('noise', { name: 'Current', x: 0, y: -.2, sx: .6, sy: .6, a: .52, b: .4, soft: .7, ramp: RS('#031a2a', '#0d6f8a', '#7af0ff'), blend: 'add', intensity: .8 }),
+      L('noise', { name: 'Depth', x: .1, y: .4, sx: .5, sy: .4, a: .55, b: .8, soft: .6, ramp: R2('#020a12', '#1a3a8a'), blend: 'add', intensity: .6 }),
+      L('blob', { name: 'Surface', x: 0, y: -.85, sx: .9, sy: .3, ramp: R2('#9ff2ff', '#0d4a6a'), blend: 'screen', intensity: .6 }),
+    ],
+    fold: { type: 'wave', angle: 0, count: 9, strength: .5, shift: .05, shading: .2, chroma: .1, smear: .03, jitter: 0, highlight: .02 },
+    fx: [{ type: 'adjust', exposure: .35 }, { type: 'bloom', threshold: .45, radius: 80, intensity: .8, tint: '#7af0ff' }, { type: 'vignette', amount: .4 }, { type: 'grain', amount: .07 }],
+    warp: { amount: .1, scale: 1.2, flow: .45 }, drift: .3,
+  }),
+  P('Duotone moon', {
+    aspect: { id: '4:5', w: 4, h: 5 }, bg: '#000000',
+    layers: [
+      L('blob', { name: 'Moon', x: .08, y: -.05, sx: .3, sy: .3, soft: .35, ramp: R2('#ffffff', '#9a9a9a') }),
+      L('noise', { name: 'Craters', x: .08, y: -.05, sx: .18, sy: .18, a: .55, b: .2, soft: .5, ramp: R2('#000000', '#000000'), blend: 'multiply', intensity: .35 }),
+      L('blob', { name: 'Halo', x: .08, y: -.05, sx: .6, sy: .6, ramp: R2('#3a3a3a', '#000000'), blend: 'add', intensity: .6 }),
+    ],
+    fx: [{ type: 'adjust', contrast: .15 }, { type: 'gradmap', amount: 1, ramp: RS('#1b1464', '#9696ff', '#ffe8d6') }, { type: 'halftone', mode: 'dots', cell: 7, angle: 30, colored: true, paper: '#120d3a', mix: .85 }],
+    drift: .15,
+  }),
+  P('Signal', {
+    aspect: { id: '16:9', w: 16, h: 9 }, bg: '#050507',
+    layers: [
+      L('spline', { name: 'Red', pts: [[-1, .1], [-.4, -.15], [.2, .2], [1, -.05]], sx: .004, sy: .04, a: .3, b: .8, ramp: R2('#ff3d3d', '#ff9a5a') }),
+      L('spline', { name: 'Green', pts: [[-1, .18], [-.4, -.07], [.2, .28], [1, .03]], sx: .004, sy: .04, a: .3, b: .8, ramp: R2('#3dff8a', '#c8ff5a') }),
+      L('spline', { name: 'Blue', pts: [[-1, .26], [-.4, .01], [.2, .36], [1, .11]], sx: .004, sy: .04, a: .3, b: .8, ramp: R2('#3d8aff', '#9696ff') }),
+    ],
+    fold: { type: 'folds', angle: 0, count: 8, strength: .25, shift: .05, shading: .4, chroma: .2, smear: 0, jitter: .04, highlight: .05 },
+    fx: [{ type: 'adjust' }, { type: 'bloom', threshold: .4, radius: 60, intensity: .8 }, { type: 'lens', distortion: .1, fringe: .5, edgeBlur: .2 }, { type: 'grain', amount: .09 }],
+    drift: .2,
+  }),
+  P('Ember ring', {
+    aspect: { id: '1:1', w: 1, h: 1 }, bg: '#070404',
+    layers: [
+      L('blob', { name: 'Inner', x: 0, y: 0, sx: .28, sy: .28, soft: .4, ramp: R2('#0a0505', '#1a0a06') }),
+      L('ring', { name: 'Fire', sx: .3, sy: .3, soft: .35, b: .04, ramp: RS('#fff0c8', '#ff7a2a', '#5a1006'), intensity: 1.2 }),
+      L('noise', { name: 'Smoke', sx: .6, sy: .6, a: .6, b: .5, soft: .7, ramp: R2('#000000', '#3a1a10'), blend: 'screen', intensity: .5 }),
+    ],
+    fx: [{ type: 'adjust', contrast: .1 }, { type: 'halation', threshold: .5, radius: 30, intensity: 1 }, { type: 'bloom', threshold: .6, radius: 90, intensity: .6, tint: '#ffb070' }, { type: 'vignette', amount: .5 }, { type: 'grain', amount: .12, colored: true }],
+    warp: { amount: .04, scale: 3, flow: .4 }, drift: .1,
+  }),
+  P('Holographic', {
+    aspect: { id: '9:16', w: 9, h: 16 }, bg: '#b9bccc',
+    layers: [
+      L('conic', { name: 'Foil', sx: 1.6, sy: 1.6, soft: .1, a: 2, ramp: RS('#ff6fb8', '#6fd8ff', '#c6ff6f', '#9a6fff', '#ff6fb8') }),
+      L('linear', { name: 'Silver', rot: 60, sx: .6, ramp: RS('#ffffff', '#8a8ea0', '#ffffff'), blend: 'multiply', intensity: .45 }),
+      L('blob', { name: 'Sheen', x: -.15, y: -.35, sx: .35, sy: .55, rot: -30, ramp: R2('#ffffff', '#d8d8ff'), blend: 'screen', intensity: .45 }),
+    ],
+    fold: { type: 'fluted', angle: 25, count: 22, strength: .6, shift: 0, shading: .35, chroma: .45, smear: 0, jitter: 0, highlight: .1 },
+    fx: [{ type: 'adjust', saturation: 1.15, contrast: .1 }, { type: 'lens', distortion: .05, fringe: .6, edgeBlur: 0 }, { type: 'grain', amount: .03 }],
+    warp: { amount: .1, scale: 1.4, flow: .4 }, drift: .3,
+  }),
+  P('Fog', {
+    aspect: { id: '3:2', w: 3, h: 2 }, bg: '#aeb3b0',
+    layers: [
+      L('linear', { name: 'Sky', rot: 90, sx: .5, ramp: RS('#eef0ec', '#c4c9c5', '#7f8883') }),
+      L('blob', { name: 'Far trees', x: -.45, y: .2, sx: .55, sy: .3, soft: .7, ramp: R2('#5f6964', '#9aa29d'), intensity: .7 }),
+      L('blob', { name: 'Near trees', x: .5, y: .35, sx: .5, sy: .45, soft: .55, ramp: R2('#2c332f', '#5f6964'), intensity: .9 }),
+      L('blob', { name: 'Light', x: -.35, y: -.3, sx: .5, sy: .35, ramp: R2('#ffffff', '#e6e8e4'), blend: 'screen', intensity: .7 }),
+      L('noise', { name: 'Mist', sx: .7, sy: .35, a: .5, b: .6, soft: .9, ramp: R2('#c9ccc9', '#ffffff'), blend: 'screen', intensity: .5 }),
+    ],
+    fx: [{ type: 'adjust' }, { type: 'blur', radius: 26, tilt: 1, focus: .6, band: .2, angle: 0 }, { type: 'grade', temp: -.15, shadows: .25, shadowColor: '#2a4a5a' }, { type: 'grain', amount: .12, size: 1.6 }],
+    warp: { amount: .05, scale: 1.2, flow: .3 }, drift: .2,
+  }),
+  P('Riso', {
+    aspect: { id: '4:5', w: 4, h: 5 }, bg: '#f2ede2',
+    layers: [
+      L('blob', { name: 'Pink', x: -.12, y: -.12, sx: .32, sy: .32, soft: .6, ramp: R2('#ff5fa2', '#ff9cc7'), blend: 'multiply' }),
+      L('blob', { name: 'Blue', x: .12, y: .1, sx: .32, sy: .32, soft: .6, ramp: R2('#2f6bff', '#8fb0ff'), blend: 'multiply' }),
+      L('blob', { name: 'Yellow', x: .05, y: .38, sx: .2, sy: .2, soft: .6, ramp: R2('#ffd23b', '#ffe68a'), blend: 'multiply' }),
+    ],
+    fx: [{ type: 'adjust' }, { type: 'halftone', mode: 'dither', cell: 9, colored: true, paper: '#f2ede2', gamma: .9, mix: .7 }, { type: 'grain', amount: .06, size: 1.4 }],
+    drift: .3,
+  }),
+  P('Lava', {
+    aspect: { id: '9:16', w: 9, h: 16 }, bg: '#0a0302',
+    layers: [
+      L('noise', { name: 'Flow', sx: .45, sy: .7, a: .5, b: .1, soft: .25, ramp: RS('#1a0402', '#c41e0a', '#ff9a2a', '#fff2b0'), intensity: 1 }),
+      L('noise', { name: 'Crust', sx: .3, sy: .4, a: .62, b: .9, soft: .3, ramp: R2('#000000', '#200604'), blend: 'multiply', intensity: .7 }),
+    ],
+    fx: [{ type: 'adjust', contrast: .1 }, { type: 'bloom', threshold: .55, radius: 60, intensity: .9, tint: '#ffb070' }, { type: 'grain', amount: .07 }],
+    warp: { amount: .18, scale: 1.1, flow: .6 }, drift: .2,
+  }),
+  P('Night drive', {
+    aspect: { id: '21:9', w: 21, h: 9 }, bg: '#030308',
+    layers: [
+      L('blob', { name: 'City', x: 0, y: .35, sx: 1.6, sy: .3, ramp: R2('#1a1040', '#030308'), intensity: .9 }),
+      L('spline', { name: 'Tail lights', style: 'paint', pts: [[-1.2, .12], [-.3, .05], [.4, .1], [1.2, .02]], sx: .008, sy: .03, a: .2, b: .5, ramp: R2('#ff2a2a', '#ff7a5a'), intensity: 1.1 }),
+      L('spline', { name: 'Headlights', style: 'paint', pts: [[-1.2, .2], [-.2, .16], [.5, .22], [1.2, .14]], sx: .006, sy: .025, a: .2, b: .5, ramp: R2('#fff2d6', '#ffd28a'), intensity: .9 }),
+      L('spline', { name: 'Signs', style: 'neon', pts: [[-.6, -.2], [-.1, -.28], [.5, -.18]], sx: .003, sy: .03, a: .6, ramp: R2('#ff4fd8', '#4fd8ff'), intensity: .8 }),
+    ],
+    fx: [{ type: 'adjust', contrast: .1 }, { type: 'blur', radius: 18, tilt: 1, focus: .45, band: .25, angle: 0 }, { type: 'halation', threshold: .5, radius: 25, intensity: .8 }, { type: 'bloom', threshold: .5, radius: 50, intensity: .6 }, { type: 'grain', amount: .1 }],
+    drift: .15,
+  }),
+  P('Pastel mesh', {
+    aspect: { id: '16:9', w: 16, h: 9 }, bg: '#f4efe8',
+    layers: [
+      L('blob', { name: 'Peach', x: -.6, y: -.25, sx: .85, sy: .7, ramp: R2('#ffad85', '#ffd8c4') }),
+      L('blob', { name: 'Lilac', x: .55, y: -.3, sx: .85, sy: .7, ramp: R2('#b4a2ff', '#ddd4ff') }),
+      L('blob', { name: 'Mint', x: .25, y: .4, sx: .9, sy: .6, ramp: R2('#8fe6c2', '#cdf3e3') }),
+      L('blob', { name: 'Butter', x: -.35, y: .35, sx: .55, sy: .45, ramp: R2('#ffe07a', '#fff0c2'), intensity: .9 }),
+    ],
+    fx: [{ type: 'adjust', saturation: 1.1 }, { type: 'grain', amount: .05, size: 1.2 }],
+    warp: { amount: .14, scale: .9, flow: .35 }, drift: .5,
   }),
 ];
 
