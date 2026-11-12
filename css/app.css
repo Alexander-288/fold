@@ -1,4 +1,4 @@
-@font-face { font-family: "Instrument Sans"; src: url("../fonts/InstrumentSans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Schibsted Grotesk"; src: url("../fonts/SchibstedGrotesk.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
 @font-face { font-family: "Fragment Mono"; src: url("../fonts/FragmentMono.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 
 /* Tokens: brand Ink / Paper / Periwinkle. Light surfaces stay in the mid-tones like Cord. */
@@ -39,7 +39,7 @@
 html, body { margin: 0; height: 100%; }
 body {
   background: var(--bg); color: var(--text);
-  font: 400 13px/1.35 "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 400 13px/1.35 "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased; overflow: hidden;
 }
 button, input { font: inherit; color: inherit; }
@@ -111,7 +111,7 @@ button { cursor: pointer; }
 .h-a { fill: #fff; stroke: #111; stroke-width: 1.5; cursor: crosshair; }
 .h-tag { pointer-events: none; }
 .h-tag rect { fill: #fff; }
-.h-tag text { fill: #111; font: 600 10.5px "Instrument Sans", sans-serif; }
+.h-tag text { fill: #111; font: 600 10.5px "Schibsted Grotesk", sans-serif; }
 .handles .h-group.is-new { animation: hIn .25s var(--ease); }
 @keyframes hIn { from { opacity: 0; transform: scale(.98); } }
 

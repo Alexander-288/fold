@@ -42,7 +42,7 @@ On canvas: drag the centre to move, the square to set size and angle (Shift keep
 - `js/ui.js` – controls
 - `js/main.js` – the editor
 
-Fonts: Instrument Sans and Fragment Mono (OFL), see `fonts/OFL.txt`. Logo and icons are in `assets/`.
+Fonts: Schibsted Grotesk and Fragment Mono (OFL), see `fonts/OFL.txt`. Logo and icons are in `assets/`.
 
 ## License
 
